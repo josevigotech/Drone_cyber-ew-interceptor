@@ -92,7 +92,7 @@ public:
 
     void interceptarPorCRAM() {
         destruido = true;
-        std::cout << "💥 [DEFENSA C-RAM] Dron " << id << " interceptado y destruido por fuego de artillería cinética a 20mm.\n";
+        std::cout << " [DEFENSA C-RAM] Dron " << id << " interceptado y destruido por fuego de artillería cinética a 20mm.\n";
     }
 
     Posicion getPosicion() const { return posicion_actual; }
