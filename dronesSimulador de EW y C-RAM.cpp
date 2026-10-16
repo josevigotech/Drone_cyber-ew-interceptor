@@ -2,47 +2,45 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include <memory>
-#include <cstdlib>
+#include <random> // C++ moderno para aleatoriedad
 
-// Estructura para posición 2D
 struct Posicion {
     double x;
     double y;
 };
 
-// 1. SISTEMA DE GUERRA ELECTRÓNICA JAMMER
+// Función útil para calcular distancias geométricas
+double calcularDistancia(Posicion p1, Posicion p2) {
+    return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2));
+}
+
 class JammerEW {
 private:
     Posicion ubicacion;
     double radio_cobertura_km;
-    double frecuencia_bloqueada_ghz; // p. ej., 1.575 GHz (GPS)
+    double frecuencia_bloqueada_ghz;
 
 public:
     JammerEW(Posicion pos, double radio, double freq)
         : ubicacion(pos), radio_cobertura_km(radio), frecuencia_bloqueada_ghz(freq) {}
 
-    // Comprueba si un objetivo está dentro del campo de interferencia
     bool estaEnRangoInterferencia(Posicion posObjetivo) const {
-        double dx = posObjetivo.x - ubicacion.x;
-        double dy = posObjetivo.y - ubicacion.y;
-        double distancia = std::sqrt(dx * dx + dy * dy);
-        return distancia <= radio_cobertura_km;
+        return calcularDistancia(posObjetivo, ubicacion) <= radio_cobertura_km;
     }
-
-    Posicion getPosicion() const { return ubicacion; }
 };
 
-// 2. CLASE CLAVE: DRON CON NAVEGACIÓN Y SENSIBILIDAD A EW
 class DronAutonomo {
 private:
     std::string id;
     Posicion posicion_actual;
     Posicion destino_base;
-    double calidad_gps; // 1.0 = Señal perfecta, 0.0 = Bloqueado (Jammed)
-    double error_inercial_acumulado; // Deriva acumulada por falta de GPS
+    double calidad_gps; 
+    double error_inercial_acumulado; 
     bool destruido;
     bool fuera_de_control;
+
+    // Generador de números aleatorios moderno
+    std::mt19937 generador{std::random_device{}()};
 
 public:
     DronAutonomo(std::string id_dron, Posicion inicio, Posicion destino)
@@ -50,11 +48,20 @@ public:
           calidad_gps(1.0), error_inercial_acumulado(0.0), 
           destruido(false), fuera_de_control(false) {}
 
-    // Simula 1 segundo de vuelo bajo condiciones de EW
     void actualizarVuelo(const std::vector<JammerEW>& red_jammers) {
         if (destruido) return;
 
-        // A. Verificar si entra en zona de interferencia (Jamming)
+        // Si ya perdió el control total, su vuelo es errático permanente hasta caer
+        if (fuera_de_control) {
+            std::uniform_real_distribution<double> desvio(-3.0, 3.0);
+            posicion_actual.x += desvio(generador);
+            posicion_actual.y += desvio(generador);
+            std::cout << ">>> [CAÍDA] Dron " << id << " vuela sin rumbo en coordenadas (X: " 
+                      << posicion_actual.x << ", Y: " << posicion_actual.y << ")\n";
+            return;
+        }
+
+        // A. Verificar Jamming
         bool bajo_ataque_ew = false;
         for (const auto& jammer : red_jammers) {
             if (jammer.estaEnRangoInterferencia(posicion_actual)) {
@@ -63,36 +70,31 @@ public:
             }
         }
 
-        // B. Lógica de Navegación GPS vs INS
+        // B. Lógica de Navegación
         if (bajo_ataque_ew) {
-            calidad_gps = 0.0; // ¡Bloqueo de señal electromagnética!
-            error_inercial_acumulado += 1.5; // El error de acelerómetros/giroscopios crece
-            
-            std::cout << "[ALERTA DRON " << id << "] ¡JAMMING DETECTADO! Perdiendo señal GPS. Nivel de deriva inercial: " 
+            calidad_gps = 0.0;
+            error_inercial_acumulado += 1.5; 
+            std::cout << "[ALERTA DRON " << id << "] ¡JAMMING! Señal GPS perdida. Deriva inercial: " 
                       << error_inercial_acumulado << "m\n";
         } else {
             calidad_gps = 1.0;
-            // Si recupera GPS, el error inercial se corrige
             if (error_inercial_acumulado > 0) error_inercial_acumulado = 0.0;
         }
 
-        // C. Evaluar estado de orientación
+        // C. Evaluar estado de orientación e incremento de posición
         if (error_inercial_acumulado > 5.0) {
             fuera_de_control = true;
-            // Desviación errática simulada por pérdida de orientación
-            posicion_actual.x += (rand() % 10 - 5); 
-            posicion_actual.y += (rand() % 10 - 5);
-            std::cout << ">>> [PERDIDA DE ORIENTACIÓN] Dron " << id << " se desvía erráticamente y cae en zona deshabitada.\n";
+            std::cout << ">>> [PÉRDIDA DE CONTROL] SISTEMAS INS SATURADOS. El dron " << id << " pierde el rumbo comercial.\n";
         } else {
-            // Avanzar hacia el objetivo
-            posicion_actual.x += 1.0; 
-            posicion_actual.y += 1.0;
+            // Avanzar progresivamente hacia el destino real (Base Aliada)
+            if (posicion_actual.x < destino_base.x) posicion_actual.x += 1.5;
+            if (posicion_actual.y < destino_base.y) posicion_actual.y += 1.5;
         }
     }
 
     void interceptarPorCRAM() {
         destruido = true;
-        std::cout << "[DEFENSA C-RAM] Dron " << id << " interceptado y destruido por fuego de artillería cinética a 20mm.\n";
+        std::cout << "[DEFENSA C-RAM] Dron " << id << " interceptado por fuego cinético a 20mm. ¡AMENAZA ELIMINADA!\n";
     }
 
     Posicion getPosicion() const { return posicion_actual; }
@@ -101,34 +103,34 @@ public:
     std::string getId() const { return id; }
 };
 
-// 3. MAIN: SIMULACIÓN DE ESCENARIO TÁCTICO REAL
 int main() {
-    // Definir infraestructura de defensa
     Posicion base_aliada = {10.0, 10.0};
     
-    // Crear un Jammer de Guerra Electrónica cubriendo la zona previa a la base
     std::vector<JammerEW> defensas_ew;
-    defensas_ew.push_back(JammerEW({5.0, 5.0}, 4.0, 1.575)); // Cobertura de 4km a 1.575 GHz
+    // Jammer estratégico en camino
+    defensas_ew.push_back(JammerEW({4.0, 4.0}, 3.5, 1.575)); 
 
-    // Dron atacante dirigiéndose a la base
     DronAutonomo dronEnemigo("SHAHED-101", {0.0, 0.0}, base_aliada);
 
-    std::cout << "--- INICIANDO SIMULACIÓN DE DEFENSA EW DE CAPAS ---\n\n";
+    std::cout << "--- INICIANDO SIMULACIÓN DE DEFENSA EN CAPAS AUTOMATIZADA ---\n\n";
 
-    // Simular el avance del dron en varios pasos de tiempo
-    for (int segundo = 1; segundo <= 6; ++segundo) {
+    for (int segundo = 1; segundo <= 10; ++segundo) {
         std::cout << "=== T + " << segundo << "s ===\n";
         
         dronEnemigo.actualizarVuelo(defensas_ew);
 
-        // Si el dron pierde orientación por la EW, deja de ser amenaza
         if (dronEnemigo.estaFueraDeControl()) {
-            std::cout << "-> Amenaza neutralizada electrónicamente por degradación inercial.\n";
+            std::cout << "-> Éxito: Amenaza neutralizada electrónicamente por la EW.\n";
+            // Dejamos que corra un segundo más para ver el mensaje de caída y cerramos
+            dronEnemigo.actualizarVuelo(defensas_ew);
             break;
         }
 
-        // Si la EW no es suficiente y el dron sigue acercándose, entra el sistema cinético C-RAM
-        if (segundo == 5 && !dronEnemigo.estaFueraDeControl()) {
+        // Medir distancia a la base para la defensa de última capa (C-RAM)
+        double distancia_a_base = calcularDistancia(dronEnemigo.getPosicion(), base_aliada);
+        std::cout << "Distancia restante a la Base: " << distancia_a_base << " km\n";
+
+        if (distancia_a_base <= 2.5 && !dronEnemigo.estaDestruido()) {
             dronEnemigo.interceptarPorCRAM();
             break;
         }
