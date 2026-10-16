@@ -14,7 +14,7 @@ double calcularDistancia(Posicion p1, Posicion p2) {
     return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2));
 }
 
-// 1. SISTEMA DE DETECCIÓN (AÑADIDO)
+// 1. SISTEMA DE DETECCIÓN 
 class RadarAlertaTemprana {
 private:
     Posicion ubicacion;
@@ -37,12 +37,12 @@ public:
     }
 };
 
-// 2. SISTEMA DE GUERRA ELECTRÓNICA (Actualizado con frecuencia)
+// 2. SISTEMA DE GUERRA ELECTRÓNICA con frecuencia.
 class JammerEW {
 private:
     Posicion ubicacion;
     double radio_cobertura_km;
-    double frecuencia_bloqueada_ghz; // Tu variable original de 1.575 GHz (GPS)
+    double frecuencia_bloqueada_ghz; //  variable  1.575 GHz GPS.
 
 public:
     JammerEW(Posicion pos, double radio, double freq) 
@@ -54,6 +54,7 @@ public:
 };
 
 // 3. DRON ENEMY CON CAPACIDAD DE DEGRADACIÓN INERCIAL
+//.Newton's First Law
 class DronAutonomo {
 private:
     std::string id;
@@ -122,7 +123,7 @@ public:
     std::string getId() const { return id; }
 };
 
-// 4. COORDINADOR CENTRAL DE LA BASE (AÑADIDO)
+// 4. COORDINADOR CENTRAL DE LA BASE*
 class CentroOperacionesTacticas {
 private:
     Posicion ubicacion_base;
@@ -172,7 +173,7 @@ int main() {
     // Instanciar el radar militar
     RadarAlertaTemprana radarAN_FPS("AN/FPS-117", base_aliada, 12.0); // Cobertura de 12km
     
-    // Crear el Jammer estratégico (usando tus parámetros originales: {posición}, radio, frecuencia)
+    // Crear el Jammer estratégico: {posición}, radio, frecuencia
     JammerEW inhibidorCamino({5.0, 5.0}, 3.5, 1.575); 
     
     // Configurar el Centro de Mando Operativo
