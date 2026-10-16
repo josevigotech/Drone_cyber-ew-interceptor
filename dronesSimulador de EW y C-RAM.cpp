@@ -11,7 +11,7 @@ struct Posicion {
     double y;
 };
 
-// 1. SISTEMA DE GUERRA ELECTRÓNICA (JAMMER)
+// 1. SISTEMA DE GUERRA ELECTRÓNICA JAMMER
 class JammerEW {
 private:
     Posicion ubicacion;
@@ -63,7 +63,7 @@ public:
             }
         }
 
-        // B. Lógica de Navegación (GPS vs INS)
+        // B. Lógica de Navegación GPS vs INS
         if (bajo_ataque_ew) {
             calidad_gps = 0.0; // ¡Bloqueo de señal electromagnética!
             error_inercial_acumulado += 1.5; // El error de acelerómetros/giroscopios crece
@@ -92,7 +92,7 @@ public:
 
     void interceptarPorCRAM() {
         destruido = true;
-        std::cout << " [DEFENSA C-RAM] Dron " << id << " interceptado y destruido por fuego de artillería cinética a 20mm.\n";
+        std::cout << "[DEFENSA C-RAM] Dron " << id << " interceptado y destruido por fuego de artillería cinética a 20mm.\n";
     }
 
     Posicion getPosicion() const { return posicion_actual; }
@@ -127,7 +127,7 @@ int main() {
             break;
         }
 
-        // Si la EW no es suficiente y el dron sigue acercándose, entra el sistema cinético (C-RAM)
+        // Si la EW no es suficiente y el dron sigue acercándose, entra el sistema cinético C-RAM
         if (segundo == 5 && !dronEnemigo.estaFueraDeControl()) {
             dronEnemigo.interceptarPorCRAM();
             break;
